@@ -20,8 +20,11 @@ Vector v3;
 Camera3D camera;
 
 float getDistance3D(Vector3 point1, Vector3 point2);
-
 void cropVectorEnd(Vector& vectorToCrop, float newLength);
+
+void createThirdVector();
+void createSecondVector();
+void createFirstVector();
 void initVectors();
 
 void draw();
@@ -67,7 +70,10 @@ void cropVectorEnd(Vector& vectorToCrop, float newLength) {
     }
 }
 
-void CreateThirdVector() {
+void createThirdVector() {
+    /* Creating a third vector at a 90 degree angle of the first two using cross product.
+    More info: https://en.wikipedia.org/wiki/Cross_product
+    */
     v3.end.x = ((v1.end.y * v2.end.z) - (v1.end.z * v2.end.y));
     v3.end.y = ((v1.end.z * v2.end.x) - (v1.end.x * v2.end.z));
     v3.end.z = ((v1.end.x * v2.end.y) - (v1.end.y * v2.end.x));
@@ -75,7 +81,7 @@ void CreateThirdVector() {
     cropVectorEnd(v3, static_cast<float>(getDistance3D(v1.start, v1.end) * .1));
 }
 
-void CreateSecondVector() {
+void createSecondVector() {
     v2.start.x = 0;
     v2.start.y = 0;
     v2.start.z = 0;
@@ -86,7 +92,7 @@ void CreateSecondVector() {
     cropVectorEnd(v2, getDistance3D(v1.start, v1.end));
 }
 
-void CreateFirstVector() {
+void createFirstVector() {
     v1.start.x = 0;
     v1.start.y = 0;
     v1.start.z = 0;
@@ -96,9 +102,9 @@ void CreateFirstVector() {
 }
 
 void initVectors() {
-    CreateFirstVector();
-    CreateSecondVector();
-    CreateThirdVector();
+    createFirstVector();
+    createSecondVector();
+    createThirdVector();
 
     cout << "v1 length: " << getDistance3D(v1.start, v1.end) << "\n";
     cout << "v2 length: " << getDistance3D(v2.start, v2.end) << "\n";
