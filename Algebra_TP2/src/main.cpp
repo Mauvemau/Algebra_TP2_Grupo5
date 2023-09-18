@@ -106,19 +106,15 @@ void calculatePyramid() {
         stepPerimeter += (a + b + c) * 2; // The sum of all sides of the triangle 2 times
         stepPerimeter += (prismLength * 3); // The length 3 times
 
-        cout << "The Perimeter of the step is: " << stepPerimeter << "\n";
-
         // -- VOLUME --
-        float stepVolume = 0;
+        float stepVolume = 0; // Volume of the current prism
         float tArea = 0; // Area of the triangle
 
         // First we find the are a of the triangle
         tArea = calculateTriangleArea(a, b, c);
         
         // Now to calculate the volume of the step 
-        stepVolume = static_cast<float>(0.5 * tArea * prismLength);
-
-        cout << "The Volume of the step is: " << stepVolume << "\n";
+        stepVolume = static_cast<float>(tArea * prismLength);
 
         // -- AREA --
         float stepArea = 0;
@@ -154,10 +150,11 @@ void calculatePyramid() {
 
         stepArea = (areaA + areaB + areaC + areaCurrentTriangle); // The sum of all 4 areas is the total
 
-        cout << "The area of the step is: " << stepArea << "\n\n";
-
         // --
 
+        cout << "The Perimeter of the step is: " << stepPerimeter << "\n";
+        cout << "The Area of the step is: " << stepArea << "\n";
+        cout << "The Volume of the step is: " << stepVolume << "\n\n";
         totalPerimeter += stepPerimeter;
         totalArea += stepArea;
         totalVolume += stepVolume;
