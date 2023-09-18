@@ -12,26 +12,41 @@ struct Vector {
     Vector3 end;
 };
 
-const int screenWidth = 800;
-const int screenHeight = 600;
+const int screenWidth = 1280;
+const int screenHeight = 720;
+
+const double m_pi = 3.14159265358979323846;
 
 Vector v1;
 Vector v2;
 Vector v3;
 
-int amountSteps;
+static int amountSteps;
+
+static float totalPerimeter;
+static float totalArea;
+static float totalVolume;
 
 Camera3D camera;
+
+float calculateTriangleArea(float a, float b, float c);
+float calculateStepHeight(float hypotenuse);
+void calculatePyramid();
 
 Vector3 getMidPoint(Vector3 point1, Vector3 point2, Vector3 point3);
 float getDistance3D(Vector3 point1, Vector3 point2);
 Vector3 getPointAtSpecificVectorLength(Vector vector, float length);
 void cropVectorEnd(Vector& vectorToCrop, float newLength);
 
+void drawStatus();
+void setSteps(int value);
 void createThirdVector();
 void createSecondVector();
 void createFirstVector();
 void initVectors();
+
+void drawControls();
+void handleControls();
 
 void draw();
 void update();
@@ -46,6 +61,107 @@ int main(void)
 
     uninit();
     return 0;
+}
+
+float calculateTriangleArea(float a, float b, float c) {
+    /* Area of a triangle using heron's formula
+       More info: https://en.wikipedia.org/wiki/Heron%27s_formula
+    */
+    float s = ((a + b + c) / 2);
+    return sqrt(s * ((s - a) * (s - b) * (s - c)));
+}
+
+float calculateStepHeight(float hypotenuse) {
+    double angleRad = m_pi / 4.0; // Our angles are always 90/45/45
+
+    return static_cast<float>(hypotenuse * sin(angleRad));
+}
+
+void calculatePyramid() {
+    cout << "\n----- CALCULATING NEW PYRAMID -----\n\n";
+    totalPerimeter = 0;
+    totalArea = 0;
+    totalVolume = 0;
+
+    float prismLength = 0; // Height of the step, it's called prism because we're mathematically calculating prisms
+    prismLength = calculateStepHeight(getDistance3D(v3.start, v3.end)); // All the prisms will have the same length
+
+    for (int i = 1; i < amountSteps; i++) {
+        cout << "STEP " << i << ":\n";
+        float currentLength = (getDistance3D(v3.start, v3.end) * i);
+        Vector3 p1 = getPointAtSpecificVectorLength(v1, currentLength);
+        Vector3 p2 = getPointAtSpecificVectorLength(v2, currentLength);
+        Vector3 p3 = getPointAtSpecificVectorLength(v3, currentLength);
+        float a = 0;
+        float b = 0;
+        float c = 0;
+
+        // -- PERIMETER --
+        float stepPerimeter = 0;
+
+        // To calculate the perimeter it's simple
+        a = getDistance3D(p1, p2); // First we get each side of one of the two triangles in the prism (Assuming both are equal here)
+        b = getDistance3D(p1, p3);
+        c = getDistance3D(p2, p3);
+        stepPerimeter += (a + b + c) * 2; // The sum of all sides of the triangle 2 times
+        stepPerimeter += (prismLength * 3); // The length 3 times
+
+        cout << "The Perimeter of the step is: " << stepPerimeter << "\n";
+
+        // -- VOLUME --
+        float stepVolume = 0;
+        float tArea = 0; // Area of the triangle
+
+        // First we find the are a of the triangle
+        tArea = calculateTriangleArea(a, b, c);
+        
+        // Now to calculate the volume of the step 
+        stepVolume = static_cast<float>(0.5 * tArea * prismLength);
+
+        cout << "The Volume of the step is: " << stepVolume << "\n";
+
+        // -- AREA --
+        float stepArea = 0;
+        float areaA = 0;
+        float areaB = 0;
+        float areaC = 0;
+        float areaCurrentTriangle = 0;
+
+        // Each step has 1 triangle and 3 rectangles
+        // First we calculate the area of each rectangle
+        areaA = a * prismLength; // To calculate the area we just do lenght * height
+        areaB = b * prismLength;
+        areaC = c * prismLength;
+
+        //For the area of the triangle it depends on the step
+        if (i > 1) {
+            // If we're at a second step we need to substract the area of the triangle from the previous step, since our current triangle is void in the middle
+            float previousLength = (getDistance3D(v3.start, v3.end) * (i - 1));
+            Vector3 previousP1 = getPointAtSpecificVectorLength(v1, previousLength);
+            Vector3 previousP2 = getPointAtSpecificVectorLength(v2, previousLength);
+            Vector3 previousP3 = getPointAtSpecificVectorLength(v3, previousLength);
+            float previousA = getDistance3D(previousP1, previousP2);
+            float previousB = getDistance3D(previousP1, previousP3);
+            float previousC = getDistance3D(previousP2, previousP3);
+            float areaPreviousTriangle = calculateTriangleArea(previousA, previousB, previousC);
+            // Now we calculate the area of the current triangle by substracting it with the previous
+            areaCurrentTriangle = (tArea - areaPreviousTriangle);
+        }
+        else {
+            // If we're at the first step we just use the area we already calculated for the volume
+            areaCurrentTriangle = tArea;
+        }
+
+        stepArea = (areaA + areaB + areaC + areaCurrentTriangle); // The sum of all 4 areas is the total
+
+        cout << "The area of the step is: " << stepArea << "\n\n";
+
+        // --
+
+        totalPerimeter += stepPerimeter;
+        totalArea += stepArea;
+        totalVolume += stepVolume;
+    }
 }
 
 Vector3 getMidPoint(Vector3 point1, Vector3 point2, Vector3 point3) {
@@ -96,8 +212,23 @@ void cropVectorEnd(Vector& vectorToCrop, float newLength) {
     vectorToCrop.end = getPointAtSpecificVectorLength(vectorToCrop, newLength);
 }
 
+void drawStatus() {
+    DrawText(TextFormat("Cantidad de escalones: %i", (amountSteps - 1)), 10, static_cast<int>(GetScreenHeight() * .8), 20, ORANGE);
+    DrawText(TextFormat("Perimetro total: %f", totalPerimeter), 10, static_cast<int>(GetScreenHeight() * .85), 20, ORANGE);
+    DrawText(TextFormat("Superficie total: %f", totalArea), 10, static_cast<int>(GetScreenHeight() * .9), 20, ORANGE);
+    DrawText(TextFormat("Volumen total: %f", totalVolume), 10, static_cast<int>(GetScreenHeight() * .95), 20, ORANGE);
+}
+
+void setSteps(int value) {
+    if (value < 2) return;
+    float multiplier = 1.0f / static_cast<float>(value);
+    cropVectorEnd(v3, static_cast<float>(getDistance3D(v1.start, v1.end) * multiplier));
+    amountSteps = value;
+    calculatePyramid();
+}
+
 void createThirdVector() {
-    float multiplier = 1.0f / static_cast<float>(amountSteps); // Completamente innecesario pero tenia ganas.
+    float multiplier = 1.0f / static_cast<float>(amountSteps);
 
     /* Creating a third vector at a 90 degree angle of the first two using cross product.
     More info: https://en.wikipedia.org/wiki/Cross_product
@@ -137,12 +268,32 @@ void initVectors() {
     cout << "v1 length: " << getDistance3D(v1.start, v1.end) << "\n";
     cout << "v2 length: " << getDistance3D(v2.start, v2.end) << "\n";
     cout << "v3 length: " << getDistance3D(v3.start, v3.end) << "\n";
+    cout << "\n";
+}
+
+void drawControls() {
+    DrawText("[Q] Para quitar escalones.", 10, 10, 20, RAYWHITE);
+    DrawText("[E] Para agregar escalones.", 10, 40, 20, RAYWHITE);
+    DrawText("[R] Para generar una nueva piramide aleatoria.", 10, 70, 20, RAYWHITE);
+    DrawText("[ESC] para cerrar el programa.", 10, 100, 20, RAYWHITE);
+}
+
+void handleControls() {
+    if (IsKeyPressed(KEY_R)) {
+        initVectors();
+        calculatePyramid();
+    }
+    if (IsKeyPressed(KEY_E)) {
+        setSteps(amountSteps + 1);
+    }
+    if (IsKeyPressed(KEY_Q)) {
+        setSteps(amountSteps - 1);
+    }
 }
 
 void draw() {
     BeginDrawing();
         ClearBackground(BLACK);
-
         BeginMode3D(camera);
             // Orientation Lines
             DrawLine3D({ 0, 0, 0 }, { 30, 0, 0 }, DARKGRAY);
@@ -226,12 +377,18 @@ void draw() {
             }
 
         EndMode3D();
+
+        drawStatus();
+        drawControls();
+
     EndDrawing();
 }
 
 void update() {
     while (!WindowShouldClose()) {
         UpdateCamera(&camera, CAMERA_ORBITAL);
+
+        handleControls();
 
         draw();
     }
@@ -249,7 +406,10 @@ void init() {
 
     amountSteps = 11;
 
+    totalPerimeter = 0;
+
     initVectors();
+    calculatePyramid();
 }
 
 void uninit() {
